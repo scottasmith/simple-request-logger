@@ -14,5 +14,3 @@ services:
       - './:/var/www/app'
     ports:
       - "80:80"
-    networks:
-      - web
