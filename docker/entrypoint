@@ -1,0 +1,45 @@
+#!/bin/sh
+set -e
+
+# include images custom helpers
+. /usr/local/bin/docker-php-helpers
+
+TYPE=${TYPE:-SERVER}
+APP_ENV=${APP_ENV:-dev}
+
+cat <<START_XDEBUG >> /usr/local/bin/start_xdebug
+sed -i "s/xdebug.start_with_request=trigger/xdebug.start_with_request=yes/" /usr/local/etc/php/conf.d/xdebug.ini
+echo "Re-starting PHP-FPM..."
+kill -SIGUSR2 "\$(cat /var/run/php/fpm.pid)"
+START_XDEBUG
+chmod +x /usr/local/bin/start_xdebug
+
+cat <<STOP_XDEBUG >> /usr/local/bin/stop_xdebug
+sed -i "s/xdebug.start_with_request=yes/xdebug.start_with_request=trigger/" /usr/local/etc/php/conf.d/xdebug.ini
+echo "Re-starting PHP-FPM..."
+kill -SIGUSR2 "\$(cat /var/run/php/fpm.pid)"
+STOP_XDEBUG
+chmod +x /usr/local/bin/stop_xdebug
+
+serve() {
+  echo "Starting PHP-FPM..."
+  php-fpm -D -g /var/run/php/fpm.pid
+
+  echo "Starting Nginx..."
+  nginx -g 'daemon off;'
+  kill "$(cat /var/run/php/fpm.pid)"
+}
+
+
+if [ "$TYPE" = "www" ]
+then
+  if [ "$APP_ENV" = "production" ]; then
+    enable_opcache
+  else
+    enable_xdebug
+  fi
+
+  serve
+else
+  sh
+fi
