@@ -20,6 +20,7 @@ return function (App $app) {
     }
 
     $app->add(new Tuupola\Middleware\HttpBasicAuthentication([
+        'path' => '/protected',
         'secure' => false,
         'users'=> [
             $config['auth']['user'] => $config['auth']['pass'],
